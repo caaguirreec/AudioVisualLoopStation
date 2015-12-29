@@ -12,14 +12,52 @@ import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
+import it.sauronsoftware.jave.AudioAttributes;
+import it.sauronsoftware.jave.Encoder;
+import it.sauronsoftware.jave.EncoderException;
+import it.sauronsoftware.jave.EncodingAttributes;
+import java.awt.Color;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.TargetDataLine;
 
 /**
  *
  * @author SOFTWARE3
  */
 public class Main extends javax.swing.JFrame {
+
+ /**
+  * Global variables
+ */    
+AudioFileFormat.Type aFF_T = AudioFileFormat.Type.WAVE;
+AudioFormat aF = new AudioFormat(8000.0F, 16, 1, true, false);
+TargetDataLine tD;
+String RecordName;
+int i;
+
+ /**
+  * Thread to record
+ */ 
+class CapThread extends Thread {
+public void run() {
+try {
+tD.open(aF);
+tD.start();
+
+
+File f = new File(System.getProperty("user.dir")+"/recordings/"+RecordName+".wav");
+AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
+}catch (Exception e){}
+}
+}
 
     /**
      * Creates new form Main
@@ -90,23 +128,68 @@ public class Main extends javax.swing.JFrame {
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         // TODO add your handling code here:
+        (new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist"+"/recordings/")).mkdirs();
         final GpioController gpio = GpioFactory.getInstance();
-        
+        i=0;
         final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02,PinPullResistance.PULL_DOWN);
             // create and register gpio pin listener
         myButton.addListener((GpioPinListenerDigital) (GpioPinDigitalStateChangeEvent event) -> {
+            
             // display pin state on console
             System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
-            jLabel1.setText(event.getState().toString());
+            if("HIGH".equals(event.getState().toString()))
+            {jLabel1.setText(event.getState().toString());
+            jPanel1.setBackground(Color.red);
+//            DataLine.Info dLI = new DataLine.Info(TargetDataLine.class,aF);
+//                try {
+//                    i++;
+//                    RecordName=Integer.toString(i);
+//                    tD = (TargetDataLine)AudioSystem.getLine(dLI);
+//                } catch (LineUnavailableException ex) {
+//                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            new CapThread().start();
+            System.out.println("Grabando...");
+            }
+            ////////////////////////////////////////////////////////
+            if("LOW".equals(event.getState().toString()))
+            {jLabel1.setText(event.getState().toString());
+            jPanel1.setBackground(Color.WHITE);
+//            tD.close();
+//            File source = new File(System.getProperty("user.dir") +"/recordings/"+RecordName+".wav");
+//            File target = new File(System.getProperty("user.dir") +"/recordings/"+RecordName+".mp3");
+//            AudioAttributes audio = new AudioAttributes();
+//            audio.setCodec("libmp3lame");
+//            audio.setBitRate(new Integer(128000));
+//            audio.setChannels(new Integer(2));
+//            audio.setSamplingRate(new Integer(44100));
+//            EncodingAttributes attrs = new EncodingAttributes();
+//            attrs.setFormat("mp3");
+//            attrs.setAudioAttributes(audio);
+//            Encoder encoder = new Encoder();
+//            try {
+//                encoder.encode(source, target, attrs);
+//            } catch (IllegalArgumentException ex) {
+//        
+//            } catch (EncoderException ex) {
+//        
+//            }
+//    source.delete();
+System.out.println("Grabación finalizada!");
+            
+            
+            
+            
+            } 
         });
          // keep program running until user aborts (CTRL-C)
-        for (;;) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+//        for (;;) {
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        }
     }//GEN-LAST:event_formWindowOpened
   
   
