@@ -18,6 +18,7 @@ import it.sauronsoftware.jave.EncoderException;
 import it.sauronsoftware.jave.EncodingAttributes;
 import java.awt.Color;
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.sampled.AudioFileFormat;
@@ -41,7 +42,10 @@ AudioFileFormat.Type aFF_T = AudioFileFormat.Type.WAVE;
 AudioFormat aF = new AudioFormat(8000.0F, 16, 1, true, false);
 TargetDataLine tD;
 String RecordName;
+boolean record=false;
 int i;
+int j;
+int modu;
 
  /**
   * Thread to record
@@ -53,12 +57,38 @@ tD.open(aF);
 tD.start();
 
 
-File f = new File(System.getProperty("user.dir")+"/recordings/"+RecordName+".wav");
+File f = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+RecordName+".wav");
 AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
 }catch (Exception e){}
 }
 }
+class CapThreadStop extends Thread {
+@Override
+public void run() {
 
+    try {
+            tD.close();
+            File source = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/1.wav");
+            File target = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/1.mp3");
+            AudioAttributes audio = new AudioAttributes();
+            audio.setCodec("libmp3lame");
+            audio.setBitRate(new Integer(128000));
+            audio.setChannels(new Integer(1));
+            audio.setSamplingRate(new Integer(44100));
+            EncodingAttributes attrs = new EncodingAttributes();
+            attrs.setFormat("mp3");
+            attrs.setAudioAttributes(audio);
+            Encoder encoder = new Encoder();
+            System.out.println("guardando...");
+            try {
+                encoder.encode(source, target, attrs);
+            } catch (IllegalArgumentException | EncoderException ex) {
+        
+            }
+            source.delete();
+}catch (Exception e){}
+}
+}
     /**
      * Creates new form Main
      */
@@ -128,36 +158,45 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         // TODO add your handling code here:
-        (new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist"+"/recordings/")).mkdirs();
+       // (new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist"+"/recordings/")).mkdirs();
         final GpioController gpio = GpioFactory.getInstance();
         i=0;
+        
+         
         final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02,PinPullResistance.PULL_DOWN);
             // create and register gpio pin listener
         myButton.addListener((GpioPinListenerDigital) (GpioPinDigitalStateChangeEvent event) -> {
+           
+            modu=j%2;
+     
             
             // display pin state on console
             System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
-            if("HIGH".equals(event.getState().toString()))
+            //if("HIGH".equals(event.getState().toString()))
+            if("HIGH".equals(event.getState().toString()) && modu==0) 
             {jLabel1.setText(event.getState().toString());
             jPanel1.setBackground(Color.red);
-//            DataLine.Info dLI = new DataLine.Info(TargetDataLine.class,aF);
-//                try {
-//                    i++;
-//                    RecordName=Integer.toString(i);
-//                    tD = (TargetDataLine)AudioSystem.getLine(dLI);
-//                } catch (LineUnavailableException ex) {
-//                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            new CapThread().start();
-            System.out.println("Grabando...");
+             
+             i++;
+             RecordName=Integer.toString(i);
+             DataLine.Info dLI = new DataLine.Info(TargetDataLine.class,aF);
+                try {
+                    tD = (TargetDataLine)AudioSystem.getLine(dLI);
+                } catch (LineUnavailableException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                }
+             new CapThread().start();
+             System.out.println("Grabando..."+modu);
+              j++;
             }
             ////////////////////////////////////////////////////////
-            if("LOW".equals(event.getState().toString()))
+            //if("LOW".equals(event.getState().toString()))
+            if("HIGH".equals(event.getState().toString()) && modu!=0) 
             {jLabel1.setText(event.getState().toString());
             jPanel1.setBackground(Color.WHITE);
-//            tD.close();
-//            File source = new File(System.getProperty("user.dir") +"/recordings/"+RecordName+".wav");
-//            File target = new File(System.getProperty("user.dir") +"/recordings/"+RecordName+".mp3");
+            tD.close();
+//            File source = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+RecordName+".wav");
+//            File target = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+RecordName+".mp3");
 //            AudioAttributes audio = new AudioAttributes();
 //            audio.setCodec("libmp3lame");
 //            audio.setBitRate(new Integer(128000));
@@ -167,17 +206,17 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
 //            attrs.setFormat("mp3");
 //            attrs.setAudioAttributes(audio);
 //            Encoder encoder = new Encoder();
-//            try {
+//             try {
 //                encoder.encode(source, target, attrs);
-//            } catch (IllegalArgumentException ex) {
-//        
-//            } catch (EncoderException ex) {
-//        
-//            }
-//    source.delete();
-System.out.println("Grabación finalizada!");
+//                 } catch (IllegalArgumentException ex) {
+//       
+//             } catch (EncoderException ex) {
+//      
+//             }
+             //source.delete();
+            System.out.println("Grabación finalizada!"+modu);
             
-            
+            j++;
             
             
             } 
