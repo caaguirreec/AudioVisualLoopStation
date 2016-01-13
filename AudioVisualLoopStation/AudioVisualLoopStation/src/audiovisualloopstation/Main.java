@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sound.sampled.AudioFileFormat;
@@ -50,12 +51,12 @@ AudioFileFormat.Type aFF_T = AudioFileFormat.Type.WAVE;
 AudioFormat aF = new AudioFormat(8000.0F, 16, 1, true, false);
 TargetDataLine tD;
 int RecordName;
-
 boolean record=false;
 int i;
 int j;
 int modu;
-int ctrLoop;
+
+ArrayList audio = new ArrayList();
 
  /**
   * Thread to record
@@ -68,6 +69,7 @@ tD.start();
 
 
 File f = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+RecordName+".wav");
+audio.add(RecordName+".wav");
 AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
 }catch (Exception e){}
 }
@@ -75,22 +77,20 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
  class LoopThread extends Thread {
           @Override
           public void run() {
-          while(true)
+        
           {System.out.println("Looping running.");
               startlooping();}
           }
           public void startlooping(){
               String fileName; 
-              if(RecordName==1)
-               { fileName = "/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+(RecordName)+".wav";}
-               else
-               { fileName = "/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+(RecordName-ctrLoop)+".wav";}
+      
+              fileName = "/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+audio.get(i-1);
                InputStream in = null;
                 try {
                     in = new FileInputStream(fileName);
                    } catch (FileNotFoundException e) {
-                    System.out.println("Media file not present in C drive.");
-                    e.printStackTrace();
+                    System.out.println("Media file not present.");
+                   
                    }
                     AudioStream as = null;
                try {
@@ -98,9 +98,9 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
                } catch (IOException e) {
                    e.printStackTrace();
                }
-               AudioPlayer.player.start(as);
+               
    try {
-        do {
+        do {AudioPlayer.player.start(as);
         } while (as.available() > 0);
         
             //startlooping();
@@ -218,15 +218,29 @@ public void run() {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        // TODO add your handling code here:
+  
        // (new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist"+"/recordings/")).mkdirs();
-        final GpioController gpio = GpioFactory.getInstance();
+       
+        pedalpush();
+
+    }//GEN-LAST:event_formWindowOpened
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+       
+       new Thread(new LoopThread()).start(); 
+   
+              
+    }//GEN-LAST:event_jButton1ActionPerformed
+         
+  public void pedalpush(){
+   final GpioController gpio = GpioFactory.getInstance();
         i=0;
-        ctrLoop=0;
+      
          
         final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_02,PinPullResistance.PULL_DOWN);
-            // create and register gpio pin listener
-        myButton.addListener((GpioPinListenerDigital) (GpioPinDigitalStateChangeEvent event) -> {
+        // create and register gpio pin listener
+  myButton.addListener((GpioPinListenerDigital) (GpioPinDigitalStateChangeEvent event) -> {
            
             modu=j%2;
      
@@ -265,25 +279,10 @@ public void run() {
             
             } 
         });
-         // keep program running until user aborts (CTRL-C)
-//        for (;;) {
-//            try {
-//                Thread.sleep(500);
-//            } catch (InterruptedException ex) {
-//                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
-    }//GEN-LAST:event_formWindowOpened
-
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-       
-        new LoopThread().start(); 
-        ctrLoop++;
-              
-    }//GEN-LAST:event_jButton1ActionPerformed
-         
   
+  
+  
+  }
     /**
      * @param args the command line arguments
      */
