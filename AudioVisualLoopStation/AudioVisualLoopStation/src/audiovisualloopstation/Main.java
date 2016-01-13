@@ -57,7 +57,7 @@ int j;
 int modu;
 
 ArrayList audio = new ArrayList();
-
+    
  /**
   * Thread to record
  */ 
