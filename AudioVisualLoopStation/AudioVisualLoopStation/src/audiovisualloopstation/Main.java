@@ -35,8 +35,10 @@ import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import sun.audio.AudioData;
 import sun.audio.AudioPlayer;
 import sun.audio.AudioStream;
+import sun.audio.ContinuousAudioDataStream;
 
 /**
  *
@@ -48,7 +50,11 @@ public class Main extends javax.swing.JFrame {
   * Global variables
  */    
 AudioFileFormat.Type aFF_T = AudioFileFormat.Type.WAVE;
-AudioFormat aF = new AudioFormat(8000.0F, 16, 1, true, false);
+AudioFormat aF = new AudioFormat(44100.0F, 8, 1, true, false);
+AudioData musicData;
+AudioStream CurrentTrack;
+ AudioPlayer musicPlayer = AudioPlayer.player;
+ContinuousAudioDataStream loop = null;
 TargetDataLine tD;
 int RecordName;
 boolean record=false;
@@ -100,8 +106,11 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
                }
                
    try {
-        do {AudioPlayer.player.start(as);
-        } while (as.available() > 0);
+     CurrentTrack=new AudioStream(new FileInputStream("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+audio.get(i-1)));
+     //AudioPlayer.player.start(as);
+     musicData = CurrentTrack.getData();
+     loop = new ContinuousAudioDataStream(musicData); 
+     musicPlayer.start(loop);
         
             //startlooping();
         
@@ -111,33 +120,6 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
 
   }
           }  
-class CapThreadStop extends Thread {
-@Override
-public void run() {
-
-    try {
-            tD.close();
-            File source = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/1.wav");
-            File target = new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/1.mp3");
-            AudioAttributes audio = new AudioAttributes();
-            audio.setCodec("libmp3lame");
-            audio.setBitRate(new Integer(128000));
-            audio.setChannels(new Integer(1));
-            audio.setSamplingRate(new Integer(44100));
-            EncodingAttributes attrs = new EncodingAttributes();
-            attrs.setFormat("mp3");
-            attrs.setAudioAttributes(audio);
-            Encoder encoder = new Encoder();
-            System.out.println("guardando...");
-            try {
-                encoder.encode(source, target, attrs);
-            } catch (IllegalArgumentException | EncoderException ex) {
-        
-            }
-            source.delete();
-}catch (Exception e){}
-}
-}
     /**
      * Creates new form Main
      */
@@ -218,9 +200,8 @@ public void run() {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-  
-       // (new File("/home/pi/NetBeansProjects/AudioVisualLoopStation/dist"+"/recordings/")).mkdirs();
-       
+        setupAudioRaspberry();
+      
         pedalpush();
 
     }//GEN-LAST:event_formWindowOpened
@@ -232,7 +213,16 @@ public void run() {
    
               
     }//GEN-LAST:event_jButton1ActionPerformed
-         
+    public void setupAudioRaspberry(){
+    String command1= "sudo amixer cset numid=3 1";
+
+              try {
+             Process proc =    Runtime.getRuntime().exec(command1);
+              proc.waitFor();
+
+              } catch (IOException | InterruptedException ex) {
+            }
+    }     
   public void pedalpush(){
    final GpioController gpio = GpioFactory.getInstance();
         i=0;
@@ -265,13 +255,22 @@ public void run() {
              System.out.println("Grabando..."+modu);
               j++;
             }
+     
             ////////////////////////////////////////////////////////
-            //if("LOW".equals(event.getState().toString()))
+      
             if("HIGH".equals(event.getState().toString()) && modu!=0) 
             {jLabel1.setText("Stop Recording: "+i+".wav");
-            jPanel1.setBackground(Color.WHITE);
+            jPanel1.setBackground(Color.green);
             tD.close();
-           
+           String command= "ffmpeg -i "+"/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+RecordName+".wav"+" -codec:a libmp3lame -qscale:a 2 "+"/home/pi/NetBeansProjects/AudioVisualLoopStation/dist/recordings/"+RecordName+".mp3";
+
+              try {
+             Process proc =    Runtime.getRuntime().exec(command);
+              proc.waitFor();
+
+              } catch (IOException ex) {
+            } catch (InterruptedException ex) {
+              }
             System.out.println("Grabación finalizada!"+modu);
             
             j++;
