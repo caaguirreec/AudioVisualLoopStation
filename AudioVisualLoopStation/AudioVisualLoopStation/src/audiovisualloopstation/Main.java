@@ -59,8 +59,10 @@ TargetDataLine tD;
 int RecordName;
 boolean record=false;
 int i;
+int k;
 int j;
 int modu;
+int modu2;
 
 ArrayList audio = new ArrayList();
     
@@ -203,6 +205,7 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
         setupAudioRaspberry();
       
         pedalpush();
+        trackPlay();
 
     }//GEN-LAST:event_formWindowOpened
 
@@ -274,6 +277,40 @@ AudioSystem.write(new AudioInputStream(tD), aFF_T, f);
             System.out.println("Grabación finalizada!"+modu);
             
             j++;
+            
+            
+            } 
+        });
+  
+  
+  
+  }
+  public void trackPlay(){
+   final GpioController gpio = GpioFactory.getInstance();
+        k=0;
+      
+         
+        final GpioPinDigitalInput myButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_03,PinPullResistance.PULL_DOWN);
+        // create and register gpio pin listener
+  myButton.addListener((GpioPinListenerDigital) (GpioPinDigitalStateChangeEvent event) -> {
+           
+            modu2=k%2;
+     
+            
+            // display pin state on console
+            System.out.println(" --> GPIO PIN STATE CHANGE: " + event.getPin() + " = " + event.getState());
+           
+            if("HIGH".equals(event.getState().toString()) && modu2==0) 
+            {                 k++;
+             new Thread(new LoopThread()).start(); 
+            }
+     
+            ////////////////////////////////////////////////////////
+      
+            if("HIGH".equals(event.getState().toString()) && modu2!=0) 
+            {
+            
+            k++;
             
             
             } 
